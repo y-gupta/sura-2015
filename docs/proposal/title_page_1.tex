@@ -1,0 +1,131 @@
+\documentclass[12pt]{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{url}
+
+% These are additional packages for "pdflatex", graphics, and to include
+% hyperlinks inside a document.
+
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{0in}
+\setlength{\textheight}{8.5in}
+
+\title{SURA-Proposal}
+\author{Yash Gupta}
+
+\begin{document}
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+
+\textsc{\LARGE Indian Institute of Technology, Delhi}\\[1.0cm] 
+\textsc{\Large Summer Research Project Proposal - 2015}\\[1.0cm] 
+\includegraphics[height=4cm]{iitd_logo.png}\\[2.0cm] 
+\HRule \\[0.5cm]
+{ \huge \bfseries Metal Corrosion}\\[0.4cm] % Title of your document
+\textsc{\large Collection, Simulation and Rendering}\\[0.2cm] % Minor heading such as course title
+\HRule \\[3.5cm]
+ 
+
+\begin{minipage}{0.45\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+\textbf{Yash Gupta}\\
+\emph{Department:} CSE\\
+\emph{Entry no.:} 2013CS10302\\
+\emph{Contact:} +91-85888-24291\\
+\emph{CGPA:} 9.31
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.45\textwidth}
+\begin{flushright} \large
+\emph{Facilitator:} \\
+\textbf{Prof. Subodh Kumar}\\
+Associate Professor, CSE\\[0.5cm]
+\emph{Head of Deptartment:}\\
+\textbf{Prof. Saroj Kaushik}\\
+Head, CSE
+\end{flushright}
+\end{minipage}\\[1cm]
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+\section{Objectives}
+
+The complete pipeline of interest to the project is:
+
+\begin{itemize}
+\item Collecting images of corroded metal blocks, along with material properties (alloy composition, surface treatments, etc)
+\item Filtering out external effects from the images (lightning, noise, etc.)
+\item Mapping scalar corrosion and weathering levels on the surface of the metal block.
+\item Physical modeling of the corrosion process and simulating it over a time series.
+\item Realistic rendering of the corroded and weathered object from various maps obtained from previous steps.
+\end{itemize}
+
+This project aims particularly at realistic rendering of the corroded object.
+
+\section{Approach}
+
+\subsection{Data Collection}
+
+Collection of visual properties of surface will be done with regular photographs of corroded blocks.\\
+The photographs will be filtered to eliminate specular lightning effects and obtain a diffuse color map of the surface.\\
+The images will be mapped to the surfaces in reconstructed 3d version.\\
+A user will mark areas in the image with a degree of corrosion and complete scalar corrosion map will be calculated from it.\\
+
+Highly detailed photographs and depth maps are available due to ongoing research in the same at IITD itself, and can be used as starting points.
+
+\subsection{Physical Modeling}
+
+The metallic object can be modeled as an array of voxels (small volume elements), each voxel acting as a cell with properties like corrosion level, diffuse color, albedo (reflectivity).\\
+Corrosion being a localized surface phenomena, will be modeled using cellular automaton.\\
+Effects of factors like weathering, alloy composition and humidity can be incorporated into the automaton parameters relating a cell's properties with neighboring cells.\\
+
+Research has been done on uniform and pit corrosion modeling at IIT Delhi itself, and can be used to get physically accurate results.
+
+\subsection{Simulation}
+
+The model generated in the previous step will be simulated over finite time steps.\\
+Various maps (diffuse color map, normal map, albedo map) are generated for the surface in this stage, using the final properties of voxels after simulation.
+
+\subsection{Rendering}
+
+The object mesh will be generated from the voxel-array representation.\\
+Diffuse map, normal/bump map and albedo map generated in the previous steps will be used with specifically programmed pixel and vertex shaders to render a realistic representation of the corroded and weathered object.
+
+This area has not been extensively explored in ongoing research at IITD, and thus potential improvements can be made. The present method is to use proprietary software (3DS-Max) to render the final results, however it is not configurable to the specific needs of corrosion and weathering effects.
+
+% \subsection{Existing Methods}
+% Existing methods rely on 
+
+\section{Duration}
+The scope of research is vast in almost all components (Collection, Modeling and Rendering) of the project, however, significant results can be expected over the summer vacation (8 weeks). 
+
+
+\section{Facilities}
+
+The project requires:
+\begin{itemize}
+\item Camera(s) for collection of surface images. (Existing data from ongoing research can also be used)
+\item Computation facilities for simulation and rendering part.
+\end{itemize}
+Otherwise, no special facilities are required by the project.
+
+
+\section{Budget}
+
+The project does not inherently require a budget, although better collection of surface details can be done with laser-based depth scanning (Existing data can also be used here).\\
+Existing computing facilities in the institute can be used for Simulation and Rendering.
+
+
+\section{References}
+
+\url{http://www.dtic.mil/cgi-bin/GetTRDoc?AD=ADA508789}
+
+\end{document}

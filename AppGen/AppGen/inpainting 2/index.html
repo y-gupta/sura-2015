@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Object Removal by Exemplar-based Inpainting</title>
+  </head>
+  
+  <body>
+    <h1>Object Removal by Exemplar-based Inpainting</br>
+      <span style="font-size:0.6em">A 
+	<a href="http://www.cc.gatech.edu/classes/AY2005/cs4495_fall/">CS7495</a>
+	Final Project by Sooraj Bhat</span></h1>
+
+    <img src="bungee0.png"/> 
+    <img src="bungee1.png"/> 
+    <img src="bungeeA.png"/>
+
+    <p><b>Deliverables:</b>
+      <a href="slide.ppt">presentation slide (PPT)</a>
+      <a href="slidesmall.png">(PNG)</a>
+      <a href="slide.html">(HTML)</a>,
+      <a href="inpainting.zip">everything but the movies: source code, samples & results (ZIP)</a>
+      </p>
+    
+    <h2>The paper I implemented:</h2>
+    
+      <a href="http://research.microsoft.com/~antcrim/">Antonio	Criminisi</a>,
+      <a href="http://www.irisa.fr/vista/Equipe/People/Patrick.Perez.english.html">Patrick Perez</a>, 
+      <a href="http://research.microsoft.com/users/toyama/">Kentaro Toyama</a>.  
+      <a href="http://www.research.microsoft.com/%7Eantcrim/papers/Criminisi_cvpr2003.pdf">
+	<b>Object Removal by Exemplar-based Inpainting (PDF)</b></a>  
+      Jun. 2003  Madison, WI <i>Proc. IEEE Computer Vision and Pattern Recognition</i>
+    
+    <h3>Abstract (from the paper)</h3> 
+    <em>
+    <p>
+      A new algorithm is proposed for removing large objects from
+      digital images. The challenge is to fill in the hole that is
+      left behind in a visually plausible way.
+    </p>    
+    <p>
+      In the past, this problem has been addressed by two classes of
+      algorithms: (i) "texture synthesis" algorithms for generating
+      large image regions from sample textures, and (ii) "inpainting"
+      techniques for filling in <em>small</em> image gaps. The former
+      work well for "textures" -- repeating two-dimensional patterns
+      with some stochasticity; the latter focus on linear "structures"
+      which can be thought of as one-dimensional patterns, such as lines
+      and object contours.
+    </p>    
+    <p>
+      This paper presents a novel and efficient algorithm that
+      combines the advantages of these two approaches. We first note
+      that exemplar-based texture synthesis contains the essential
+      process required to replicate both texture and structure; the
+      success of structure propagation, however, is highly dependent on
+      the order in which the filling proceeds.  We propose a best-first
+      algorithm in which the confidence in the synthesized pixel values
+      is propagated in a manner similar to the propagation of
+      information in inpainting. The actual colour values are computed
+      using exemplar-based synthesis. Computational efficiency is
+      achieved by a block-based sampling process.
+    </p>
+    <p>
+      A number of examples on real and synthetic images demonstrate
+      the effectiveness of our algorithm in removing large occluding
+      objects as well as thin scratches. Robustness with respect to the
+      shape of the manually selected target region is also
+      demonstrated. Our results compare favorably to those obtained by
+      existing techniques.
+    </p>
+  </em>
+    
+    <h2>What exactly was implemented:</h2>
+    
+    <p>I implemented the entire algorithm from the paper.  A
+    pseudo-code description of the algorithm (from the paper) follows.
+    Let <i>R</i> represent the region to be filled, <i>I</i> the
+    entire image, <i>S=I-R</i> the source region from which candidate
+    exemplars are chosen, <i>P(p)</i> the priority of a pixel,
+    <i>C(p)</i> the confidence term for pixel <i>p</i>, <i>D(p)</i>
+    the data term for pixel <i>p</i>, and <i>t</i> the iteration:</p>
+
+    <ul>
+      <li>Extract the manually selected initial front <i>dR<sup>0</sup></i>.</li> 
+      <li>Repeat until done:
+	<ul>
+	  <li>Identify the fill front <i>dR<sup>t</sup></i>.  If <i>dR<sup>t</sup></i> = {}, exit.</li>
+	  <li>Compute priorities <i>P(p) = C(p)*D(p)</i>, \forall <i>p</i> \in <i>dR<sup>t</sup></i>.</li>
+	  <li>Find the patch <i>Hp</i> with maximum priority, 
+	    <i>i.e.</i> <i>Hp</i> | <i>p</i> = argmax<sub>{<i>p</i> \in <i>dR<sup>t</sup></i>}</sub> <i>P(p)</i>.</li>
+	  <li>Find the exemplar <i>Hq</i> \in <i>S</i> that minimizes
+	    the sum squared error (SSE).</li>
+	  <li>Copy image data from <i>Hq</i> to <i>Hp</i>.</li>
+	  <li>Update <i>C(p)</i> \forall <i>p</i> | <i>p</i> \in (<i>Hp</i> \intersect <i>R</i>).</li>
+	</ul>
+      </li>
+    </ul>
+    
+    <p>The main contribution of this paper is the
+    priority/patch-ordering mechanism that allows an exemplar-based
+    approach to respect the structural features of the input image.
+    The priority is composed of a <i>confidence term, C(p),</i> and a
+    <i>data term, D(p),</i> both defined over pixels:</p>
+    
+  <ul>
+    <li><i>C(p) = ( Sum<sub>{q \in Hp \intersect ~R}</sub>C(q) ) / ( area of patch )</i></li>
+    <li><i>D(p) = abs( Isophote(p) \dot Normal(p) ) / \alpha  </i></li>
+  </ul>
+    
+    <p>Intuitively, the confidence term measures how sure a pixel is
+    of its own value; this is computed from the confidence of
+    surrounding pixels that have already been filled (or weren't in
+    the fill region to begin with).  Confidence tends to decay as the
+    center of the fill region is approached.  Because of this, if the
+    priority only consisted of the confidence term, the patches would
+    be selected in an "onion-peel" manner, which is typical of current
+    exemplar-based approaches.  Confidence ignores structural
+    information in the image, however.  This is why the data term is
+    necessary; it is a combination of how strongly an <i>isophote</i>
+    at a pixel collides with the contour at that same pixel.  An
+    isophote is basically the gradient at a pixel rotated by 90
+    degrees---it captures the "strength of flow" of an edge.  If only
+    the data term is used in the priority, however, edges end up
+    propagating where they shouldn't.  It is the harmony between the
+    two factors that creates good results.  In this vein, both
+    quantities are normalized (to lie between 0 and 1) by appropriate
+    factors.  Figure 3 in the paper diagrams the quantities.</p>
+
+<img src="isophote.png"/>
+
+  
+  <h3>Miscellany</h3>
+  
+    <p>I did not use the CIE Lab colorspace as they did in the paper
+    because the choice of colorspace is orthogonal to the algorithm.
+    The CIE Lab colorspace <i>does</i> have better perceptual
+    uniformity than the RGB colorspace, as the authors point out,
+    which is why they use it in their implementation.</p>
+
+  <p>I developed the algorithm in Matlab and coded a critical portion
+  in C (<i>i.e.</i> a Matlab MEX-file).  The code is small and easy to
+  use: it is contained in one M-file and one C file, totaling 188
+  lines of code and 104 lines containing semicolons ("logical" lines
+  of code). For usage notes, see <tt>README.txt</tt>.</p>
+
+  <h2>Results:</h2> 
+
+  <p>In short, the results turned out quite well.  The only major
+  discrepancy was in the execution speed between my implementation and
+  the authors'.  All experiments were run on a 2GHz Pentium 4 laptop
+  with 256MB of RAM.  All results presented in this report are mine
+  alone.  In the images for the confidence and data terms, blue = 0,
+  red = 1.  Values in between are scaled to the appropriate color.</p>
+
+  <h3>A synthetic image</h3> 
+
+  <p>I created a 213x284 synthetic image for testing and sanity
+  checking.  My implementation took 25 seconds to inpaint this image.
+  It correctly painted in the missing parts of the synthetic
+  image. The interesting thing to note about this example is the
+  presence of the red dots in the data term; they lie along the hard
+  edge between the black and gray regions.  Because of the presence of
+  such a strong edge, the pixels along the edge get a high priority;
+  therefore, those patches get filled first.  Here is a movie showing
+  the region-filling for the synthetic image (.avi files): <a
+  href="bw.avi">compressed, 52KB</a>, <a href="bw2.avi">uncompressed,
+  ~14MB</a>.</p>
+
+  <img src="bw0.png" alt="Original image" title="Original image"/>
+  <img src="bw2.png" alt="Fill region" title="Fill region"/>
+  <img src="bwA.png" alt="Inpainted image" title="Inpainted image"/>
+  <img src="bwP2.png"  alt="Confidence and data terms, respectively" 
+       title="Confidence and data terms, respectively" width="675" height="350"/>
+  
+  <h3>A natural image</h3> 
+  
+  <p>For a natural image to work on, I used the photo of a bungee
+  jumper from the paper.  This allows me to compare my implementation
+  with the authors'.  My implementation takes 114 seconds to inpaint
+  this 206x308 image; theirs, 18 seconds.  The previous
+  state-of-the-art (Harrison's resynthesizer), takes 10 minutes, as
+  they report.  Their experiments, however, were run on on a "2.5GHz
+  Pentium IV with 1GB of RAM", so it's not quite a fair comparison.
+  Furthermore, 57% of of my execution time is spent in one routine,
+  <tt>bestexemplar</tt> (even <i>after</i> coding its critical portion
+  in C!), which is time-intesive because it needs to do a SSE
+  calculation <i>for each patch (sliding window) in the source
+  region</i>.  It is possible they have a smarter implementation of
+  that subroutine, but it isn't mentioned in the paper.  Another 20%
+  is wasted in <tt>getpatch</tt> which merely does some indexing
+  calculations.  Also, the authors don't mention what language they
+  used, but I suspect it was either C or C++.</p>
+
+  <p>Here is a movie showing the region-filling for the natural image
+  (.avi files): <a href="bungee.avi">compressed, ~1MB</a>, <a
+  href="bungee2.avi">uncompressed, ~60MB</a>.</p>
+
+    <table cellpadding="0" cellspacing="5"><tr>
+	  <td><img src="bungee0.png" alt="Original image" title="Original image"/></td>
+	  <td><img src="bungee1.png" alt="Fill region" title="Fill region"/></td>
+	  <td><img src="bungeeA.png" alt="Inpainted image" title="Inpainted image"/></td>
+	</tr></table>
+    <img src="bungeeP2.png" alt="Confidence and data terms, respectively" 
+	 title="Confidence and data terms, respectively" width="650" height="375"/>
+
+<p>Again, the data term reveals something about how the linear structure
+is preserved.  At two points in the jumpers's torso, the data term
+becomes larger, along the two edges created by the roof of the
+building in the background (it's hard to see; look for the red dots).</p>
+
+  <hr>
+  <!-- Created: Mon Nov 29 15:51:57 Eastern Standard Time 2004 -->
+  <!-- hhmts start -->
+Last modified: Mon Nov 29 23:10:50 Eastern Standard Time 2004
+<!-- hhmts end -->
+</body>
+</html>
