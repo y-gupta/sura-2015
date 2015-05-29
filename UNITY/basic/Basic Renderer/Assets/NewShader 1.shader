@@ -29,7 +29,7 @@
             void disp (inout appdata v)
             {
                 float d = tex2Dlod(_DispTex, float4(v.texcoord.xy,0,0)).r * _Displacement;
-                v.vertex.xyz += v.normal * d;
+                v.vertex.xyz += v.normal * -d;
             }
 
             struct Input {
