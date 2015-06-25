@@ -3,3 +3,6 @@
 **/tmp/
 **/TEMP/
 **/TMP/
+res/
+*.bmp
+**/*.bmp
