@@ -1,15 +1,22 @@
+#include <iostream>
 #include <cstdio>
 #include <vector>
 #include <algorithm>
 #include <string>
 #include <cassert>
 #include <cstdint>
+#include <queue>
+#include <limits>
+#include <cfloat>
 using namespace std;
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb-image.h"
 
 #define BF_TYPE 0x4D42             /* "MB" */
+
+#define EPS (1.0/32)
 #pragma pack(2)
+
 struct  BITMAPFILEHEADER                      /**** BMP file header structure ****/
 {
 		unsigned short Type;           /* Magic number for file */
@@ -61,6 +68,9 @@ public:
     if(b>1.f)b=1.f;if(b<0.f)b=0.f;
     if(a>1.f)a=1.f;if(a<0.f)a=0.f;
   }
+  void print() const{
+  	printf("%d R, %d G, %d B, %d A\n",r,g,b,a);
+  }
   void decode(uint32_t brga){
     r=(brga & 0x000000ff)/255.f;
     g=((brga & 0x0000ff00)>>8)/255.f;
@@ -81,6 +91,21 @@ public:
   }
   Color operator *(const float &_){
     return Color(r*_,g*_,b*_,a*_);
+  }
+  bool operator ==(const Color &_)const{
+  	return (fabs(r-_.r)<=EPS && fabs(g-_.g)<=EPS && fabs(b-_.b)<=EPS && fabs(a-_.a)<=EPS);
+  }
+  bool operator <(const Color &_) const{
+  	if(*this==_)return false;
+  	if(r<_.r)return true;if(r>_.r)return false;
+  	if(g<_.g)return true;if(g>_.g)return false;
+  	if(b<_.b)return true;if(b>_.b)return false;
+  	if(a<_.a)return true;if(a>_.a)return false;
+  	return false;
+  }
+  Color& operator =(const Color &_){
+  	r=_.r;g=_.g;b=_.b;a=_.a;
+  	return *this;
   }
 };
 class Image{
@@ -114,10 +139,9 @@ public:
     puts("Done");
   }
 };
-using namespace std;
-int main(int argc, char **argv){
+int generateMaps(int argc,char** argv){
 	if(argc<2)
-		return 1;
+	return 1;
   string base=argv[1];
   string names[]={"color","depth","disp","metal","smooth"};
   int num_manifolds=5;
@@ -153,4 +177,93 @@ int main(int argc, char **argv){
   delete basemap;
 	for(auto map:maps)
     delete map;
+}
+
+#include <unordered_map>
+#include <map>
+
+#define THRESHOLD (3e-2)
+
+using namespace std;
+map<Color,int> color_map;
+vector<Color> colors;
+vector<vector<pair<float,int> > > adj;
+
+float dist(const Color& c1,const Color& c2){
+	return sqrt((c1.r-c2.r)*(c1.r-c2.r) + (c1.g-c2.g)*(c1.g-c2.g) + (c1.b-c2.b)*(c1.b-c2.b) + (c1.a-c2.a)*(c1.a-c2.a));
+}
+///Dijkstra Algorithm using priority queue
+/// int Dijkstra (starting_node,destination_node,number_of_nodes,edges as v(v(p(i,i))) )
+/// edges stored as e[node1][(weight,node2)]
+/// returns the length of the shortest path
+
+#define mp make_pair
+void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,float cur[])
+{
+    priority_queue< pair<float,int>, vector<pair<float,int> >, greater< pair<float,int> > >  q;
+    int node,i;
+    float cost;
+
+    q.push(mp(0.0,beg));
+    while(!q.empty())
+    {
+        cost=q.top().first;
+        node=q.top().second;
+        q.pop();
+        if(cur[node]<cost)continue;
+        for(i=0;i<e[node].size();i++)
+            if(cur[e[node][i].second]>cost+e[node][i].first)
+            {
+                cur[e[node][i].second]=cost+e[node][i].first;
+                q.push(mp(cost+e[node][i].first,e[node][i].second));
+            }
+    }
+}
+
+int main(int argc, char **argv){
+	if(argc<2)
+	return 1;
+  string name=argv[1];
+  Image* map = new Image();
+  map->load(name);
+
+ 	color_map.clear(); 
+  Color c(0,0,0,0);
+  for(int i=0;i<map->w;i++){
+  	for(int j=0;j<map->h;j++){
+  		c = map->get(i,j);
+  		auto it = color_map.find(c);
+  		if(it==color_map.end()){
+  			color_map.insert(pair<Color,int>(c,1));
+  		}
+  		else{
+  			it->second++;
+  		}
+  	}
+  }
+  colors.clear();
+  for(auto _maps : color_map){
+  	colors.push_back(_maps.first);
+  }
+  int N = colors.size();
+  float d;
+  cout<<"Number of colors: "<<N<<endl;
+  adj.resize(N,vector<pair<float,int> >(0));
+  for(int i=0;i<N;i++){
+  	for(int j=i+1;j<N;j++){
+  		d = dist(colors[i],colors[j]);
+  		if(d<=THRESHOLD){
+  			adj[i].push_back(make_pair(d,j));
+  			adj[j].push_back(make_pair(d,i));
+  		}
+  	}
+  }
+  float cost[N+1];
+  for(int i=0;i<=N;i++)cost[i]=FLT_MAX;
+
+  dijkstra(0,N,adj,cost);
+  for(int i=0;i<=N;i++)cout<<cost[i]<<endl;
+  
+  if(map)
+  delete map;
 }
