@@ -192,13 +192,14 @@ vector<vector<pair<float,int> > > adj;
 float dist(const Color& c1,const Color& c2){
 	return sqrt((c1.r-c2.r)*(c1.r-c2.r) + (c1.g-c2.g)*(c1.g-c2.g) + (c1.b-c2.b)*(c1.b-c2.b) + (c1.a-c2.a)*(c1.a-c2.a));
 }
+
 ///Dijkstra Algorithm using priority queue
 /// int Dijkstra (starting_node,destination_node,number_of_nodes,edges as v(v(p(i,i))) )
 /// edges stored as e[node1][(weight,node2)]
 /// returns the length of the shortest path
 
 #define mp make_pair
-void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,float cur[])
+void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,vector<float> &cur)
 {
     priority_queue< pair<float,int>, vector<pair<float,int> >, greater< pair<float,int> > >  q;
     int node,i;
@@ -258,11 +259,20 @@ int main(int argc, char **argv){
   		}
   	}
   }
-  float cost[N+1];
-  for(int i=0;i<=N;i++)cost[i]=FLT_MAX;
-
-  dijkstra(0,N,adj,cost);
-  for(int i=0;i<=N;i++)cout<<cost[i]<<endl;
+  vector<pair<int,vector<float> > > cpd(0);
+  puts("Getting control points...");
+  int tmp;
+  for(int i=0;i<3;i++){
+    cout<<"Enter:";
+    cin>>tmp;
+    cout<<"Processing..."<<endl;
+    cpd.push_back(mp(tmp,vector<float>(N+1,FLT_MAX)));
+    dijkstra(cpd[i].first,N,adj,cpd[i].second);
+    cout<<"Done."<<endl;
+  }
+  for(int i=0;i<=N;i++){
+    printf("%.2f %.2f %.2f\n",cpd[0].second[i],cpd[1].second[i],cpd[2].second[i]);
+  }
   
   if(map)
   delete map;
