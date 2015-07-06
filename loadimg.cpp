@@ -185,14 +185,9 @@ int generateMaps(int argc,char** argv){
 #define CONTROL_POINTS (5)
 #define FLOAT_MAX 1e6
 
-map<Color,int> color_map;
-vector<Color> colors;
-vector<vector<pair<float,int> > > adj;
-
 float dist(const Color& c1,const Color& c2){
 	return sqrt((c1.r-c2.r)*(c1.r-c2.r) + (c1.g-c2.g)*(c1.g-c2.g) + (c1.b-c2.b)*(c1.b-c2.b) + (c1.a-c2.a)*(c1.a-c2.a));
 }
-
 #define mp make_pair
 void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,vector<float> &cur){
 	priority_queue< pair<float,int>, vector<pair<float,int> >, greater< pair<float,int> > >  q;
@@ -232,14 +227,34 @@ void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,vector<float> &
 // 	}
 // 	cout<<">"<<(_max)<<"==>"<<dist[_nslots]<<endl;
 // }
+
+map<Color,int> color_map;									//Frequency of each color
+vector<Color> colors;
 int main(int argc, char **argv){
-	if(argc<2)
-	return 1;
+	if(argc<2)return 1;
+
 	string name=argv[1];
 	Image* map = new Image();
 	map->load(name);
+	puts("Dimestion of the image(width,height):");
+	cout<<map->w<<" "<<map->h<<endl;
 
-	color_map.clear(); 
+	
+	puts("Getting the control points...");
+	int x,y;
+	float corrosion_value;
+	vector<pair<int,float> > cv(0);  	//control point(color space) ,corrosion_value
+	vector<pair<int,int> > cp(0);		//control_point(pixel space)
+	for(int i=0;i<CONTROL_POINTS;i++){
+		puts("Enter x y val");
+		cin>>x>>y>>corrosion_value;
+		cv.push_back(mp(0,corrosion_value));
+		cp.push_back(mp(x,y));
+	}
+	puts("Control points done.");
+
+	puts("Processing image. Obtaining color frequency...");
+	color_map.clear();
 	Color c(0,0,0,0);
 	for(int i=0;i<map->w;i++){
 		for(int j=0;j<map->h;j++){
@@ -253,17 +268,24 @@ int main(int argc, char **argv){
 			}
 		}
 	}
-	colors.clear();
+	puts("Color frequency done.");
+
+	puts("Getting unique color...");
+	
 	for(auto _maps : color_map){
+		for(int i=0;i<CONTROL_POINTS;i++){
+			if(_maps.first==map->get(cp[i].first,cp[i].second)) cv[i].first=colors.size();
+		}
 		colors.push_back(_maps.first);
 	}
-	
+	puts("Unique color done.");
+
+
+	puts("Generating the graph...");
+	vector<vector<pair<float,int> > > adj;
 	int N = colors.size();
 	float d;
-	puts("Number of colors:");
-	cout<<N<<endl;
 	adj.resize(N,vector<pair<float,int> >(0));
-	
 	for(int i=0;i<N;i++){
 		for(int j=i+1;j<N;j++){
 			d = dist(colors[i],colors[j]);
@@ -273,40 +295,31 @@ int main(int argc, char **argv){
 			}
 		}
 	}
-	
-	//Calculation of 1/dA, 1/dB, 1/dC
-	vector<pair<int,vector<float> > > cpd(0); //control_point_distance
-	vector<float> cv(0);  										//corrosion_value
-	puts("Getting control points...");
-	int point;
-	float val;
+	puts("Generatin graph done.");
+
+	puts("Calculating the control point distance...");
+	vector<vector<float> > cpd(0);				//control_point_distance
 	for(int i=0;i<CONTROL_POINTS;i++){
-		puts("Point:");cin>>point;
-		puts("Corrosion value:");cin>>val;
-		puts("Processing...");
-		
-		cpd.push_back(mp(point,vector<float>(N+1,FLOAT_MAX)));
-		cv.push_back(val);
-		dijkstra(cpd[i].first,N,adj,cpd[i].second);
+		cpd.push_back(vector<float>(N+1,FLOAT_MAX));
+		dijkstra(cv[i].first,N,adj,cpd[i]);
 
 		for(int j=0;j<=N;j++){
-			if(cpd[i].second[j]>1e-6) cpd[i].second[j] = 1.0/cpd[i].second[j];
-			else cpd[i].second[j] = FLOAT_MAX;			
+			if(cpd[i][j]>1e-6) cpd[i][j] = 1.0/cpd[i][j];
+			else cpd[i][j] = FLOAT_MAX;			
 		}
-		puts("Done.");
 	}
-
+	puts("Done.");
+	
 	// Corrosion and the color map
 	vector<pair<float,Color> > cor_color;
 	float deno,num;
 	for(int i=0;i<=N;i++){
 		deno=0;num=0;
 		for(int j=0;j<CONTROL_POINTS;j++){
-			deno += cpd[j].second[i];
-			num += cpd[j].second[i]*cv[j];
+			deno += cpd[j][i];
+			num += cpd[j][i]*cv[j].second;
 		}
-		val=num/deno;
-		cor_color.push_back(mp(val,colors[i]));
+		cor_color.push_back(mp(num/deno,colors[i]));
 	}
 	
 	int res[10]={0};
@@ -318,6 +331,19 @@ int main(int argc, char **argv){
 		cout<<res[i]<<" ";
 	cout<<endl;
 	
+	puts("Generating output...");
+	Image* out = new Image();
+	out->init(100,1000);
+
+	for(int i=0;i<=N;i++){
+		if(cor_color[i].first<1.0){
+			for(int j=0;j<out->w;j++){
+				out->set(j,int(cor_color[i].first*out->h),cor_color[i].second);
+			}
+		}
+	}
+	out->save("cor_out.bmp");
+	puts("Done.");
 	if(map)
 	delete map;
 }
