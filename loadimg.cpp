@@ -13,7 +13,6 @@ using namespace std;
 #include "stb-image.h"
 
 #define BF_TYPE 0x4D42             /* "MB" */
-
 #define EPS (1.0/32)
 #pragma pack(2)
 
@@ -183,6 +182,7 @@ int generateMaps(int argc,char** argv){
 #include <map>
 
 #define THRESHOLD (3e-2)
+#define CONTROL_POINTS (5)
 #define FLOAT_MAX 1e6
 
 map<Color,int> color_map;
@@ -195,26 +195,43 @@ float dist(const Color& c1,const Color& c2){
 
 #define mp make_pair
 void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,vector<float> &cur){
-		priority_queue< pair<float,int>, vector<pair<float,int> >, greater< pair<float,int> > >  q;
-		int node,i;
-		float cost;
-
-		q.push(mp(0.0,beg));
-		cur[beg]=0;
-		while(!q.empty())
-		{
-				cost=q.top().first;
-				node=q.top().second;
-				q.pop();
-				if(cur[node]<cost)continue;
-				for(i=0;i<e[node].size();i++)
-						if(cur[e[node][i].second]>cost+e[node][i].first)
-						{
-								cur[e[node][i].second]=cost+e[node][i].first;
-								q.push(mp(cost+e[node][i].first,e[node][i].second));
-						}
+	priority_queue< pair<float,int>, vector<pair<float,int> >, greater< pair<float,int> > >  q;
+	int node,i;
+	float cost;
+	q.push(mp(0.0,beg));
+	cur[beg]=0;
+	while(!q.empty()){
+		cost=q.top().first;
+		node=q.top().second;
+		q.pop();
+		if(cur[node]<cost)continue;
+		for(i=0;i<e[node].size();i++){
+			if(cur[e[node][i].second]>cost+e[node][i].first){
+				cur[e[node][i].second]=cost+e[node][i].first;
+				q.push(mp(cost+e[node][i].first,e[node][i].second));
+			}
 		}
+	}
 }
+
+// void distribution(vector<float> v,float _max,int _nslots){
+// 	float len = _max/_nslots;
+// 	int dist[_nslots+1]={0};
+// 	int val;
+// 	for(int i=0;i<v;i++){
+// 		val = int((v[i]*_nslots)/_max);
+// 		if(val<_nslots){
+// 			dist[val]++;
+// 		} 
+// 		else{
+// 			dist[_nslots]++;
+// 		}
+// 	}
+// 	for(int i=0;i<_nslots;i++){
+// 		cout<<i*len<<"-"<<(i+1)*len<<"==>"<<dist[i]<<endl;
+// 	}
+// 	cout<<">"<<(_max)<<"==>"<<dist[_nslots]<<endl;
+// }
 int main(int argc, char **argv){
 	if(argc<2)
 	return 1;
@@ -240,10 +257,13 @@ int main(int argc, char **argv){
 	for(auto _maps : color_map){
 		colors.push_back(_maps.first);
 	}
+	
 	int N = colors.size();
 	float d;
-	cout<<"Number of colors: "<<N<<endl;
+	puts("Number of colors:");
+	cout<<N<<endl;
 	adj.resize(N,vector<pair<float,int> >(0));
+	
 	for(int i=0;i<N;i++){
 		for(int j=i+1;j<N;j++){
 			d = dist(colors[i],colors[j]);
@@ -260,7 +280,7 @@ int main(int argc, char **argv){
 	puts("Getting control points...");
 	int point;
 	float val;
-	for(int i=0;i<3;i++){
+	for(int i=0;i<CONTROL_POINTS;i++){
 		puts("Point:");cin>>point;
 		puts("Corrosion value:");cin>>val;
 		puts("Processing...");
@@ -268,33 +288,27 @@ int main(int argc, char **argv){
 		cpd.push_back(mp(point,vector<float>(N+1,FLOAT_MAX)));
 		cv.push_back(val);
 		dijkstra(cpd[i].first,N,adj,cpd[i].second);
-		
 
-		int distribution[100]={0};
 		for(int j=0;j<=N;j++){
-			if(cpd[i].second[j]>1e-6)
-				cpd[i].second[j] = 1.0/cpd[i].second[j];
-			else
-				cpd[i].second[j] = FLOAT_MAX;
-			
-			if(cpd[i].second[j]*50<=100){
-				distribution[int(cpd[i].second[j]*50)]++;
-			}
-		}
-		puts("Distribution...");
-		for(int j=0;j<100;j++){
-			cout<<distribution[j]<<" ";
+			if(cpd[i].second[j]>1e-6) cpd[i].second[j] = 1.0/cpd[i].second[j];
+			else cpd[i].second[j] = FLOAT_MAX;			
 		}
 		puts("Done.");
 	}
 
 	// Corrosion and the color map
 	vector<pair<float,Color> > cor_color;
+	float deno,num;
 	for(int i=0;i<=N;i++){
-		// printf("%.2f %.2f %.2f\n",cpd[0].second[i],cpd[1].second[i],cpd[2].second[i]);
-		val=(cpd[0].second[i]*cv[0] + cpd[1].second[i]*cv[1]+cpd[2].second[i]*cv[2])/(cpd[0].second[i]+cpd[1].second[i]+cpd[2].second[i]);
+		deno=0;num=0;
+		for(int j=0;j<CONTROL_POINTS;j++){
+			deno += cpd[j].second[i];
+			num += cpd[j].second[i]*cv[j];
+		}
+		val=num/deno;
 		cor_color.push_back(mp(val,colors[i]));
 	}
+	
 	int res[10]={0};
 	for(int i=0;i<=N;i++){
 		if(cor_color[i].first<=1.0)
