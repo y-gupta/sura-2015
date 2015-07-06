@@ -117,6 +117,7 @@ public:
 		w=_w;
 		h=_h;
 		data=(unsigned char *)STBI_MALLOC(w*h*4);
+		memset(data,0,w*h*4);
 	}
 	Color get(int x,int y){
 		assert(x<w && y<h && x>=0 && y>=0);
@@ -182,7 +183,7 @@ int generateMaps(int argc,char** argv){
 #include <map>
 
 #define THRESHOLD (3e-2)
-#define CONTROL_POINTS (5)
+#define CONTROL_POINTS (8)
 #define FLOAT_MAX 1e6
 
 float dist(const Color& c1,const Color& c2){
@@ -278,6 +279,7 @@ int main(int argc, char **argv){
 		}
 		colors.push_back(_maps.first);
 	}
+	cout<<"Number of colors="<<colors.size()<<endl;
 	puts("Unique color done.");
 
 
@@ -304,26 +306,41 @@ int main(int argc, char **argv){
 		dijkstra(cv[i].first,N,adj,cpd[i]);
 
 		for(int j=0;j<=N;j++){
+			if(cpd[i][j]==FLOAT_MAX){
+				cpd[i][j]=-1;
+				continue;
+			}
 			if(cpd[i][j]>1e-6) cpd[i][j] = 1.0/cpd[i][j];
-			else cpd[i][j] = FLOAT_MAX;			
+			else cpd[i][j] = FLOAT_MAX;
+
 		}
 	}
 	puts("Done.");
 	
+	puts("Generating the corrosion_color_map...");
 	// Corrosion and the color map
 	vector<pair<float,Color> > cor_color;
 	float deno,num;
+	int flag;
 	for(int i=0;i<=N;i++){
-		deno=0;num=0;
+		deno=0;num=0;flag=0;
 		for(int j=0;j<CONTROL_POINTS;j++){
-			deno += cpd[j][i];
-			num += cpd[j][i]*cv[j].second;
+			if(cpd[j][i]>=0){
+				flag=1;
+				deno += cpd[j][i];
+				num += cpd[j][i]*cv[j].second;
+			}
 		}
-		cor_color.push_back(mp(num/deno,colors[i]));
+		if(flag){
+			cor_color.push_back(mp(num/deno,colors[i]));
+		}
 	}
-	
+	puts("Done.");
+	N = cor_color.size();
+
+	cout<<N<<endl;
 	int res[10]={0};
-	for(int i=0;i<=N;i++){
+	for(int i=0;i<N;i++){
 		if(cor_color[i].first<=1.0)
 		res[int(cor_color[i].first*10)]++;
 	}
@@ -333,17 +350,31 @@ int main(int argc, char **argv){
 	
 	puts("Generating output...");
 	Image* out = new Image();
-	out->init(100,1000);
+	out->init(1000,10000);
 
-	for(int i=0;i<=N;i++){
+	Image* out1 = new Image();
+	out1->init(1000,10000);
+
+	vector<int> width(10000,0);
+	for(int i=0;i<N;i++){
 		if(cor_color[i].first<1.0){
-			for(int j=0;j<out->w;j++){
-				out->set(j,int(cor_color[i].first*out->h),cor_color[i].second);
+			int h = int(cor_color[i].first*out->h);
+			for(int w=width[h];w<width[h]+5;w++){
+				out->set(w,h,cor_color[i].second);
+			}
+		 	for(int w=0;w<out->w;w++){
+				out1->set(w,h,cor_color[i].second);
+			}
+			width[h]+=5;
+			if(width[h]>=995){
+				width[h]=995;
 			}
 		}
 	}
-	out->save("cor_out.bmp");
+	out->save("spectrum.bmp");
+	out1->save("corrosion_color_map.bmp");
 	puts("Done.");
-	if(map)
-	delete map;
+	if(map)delete map;
+	if(out)delete out;
+	if(out1)delete out1;
 }
