@@ -120,16 +120,21 @@ int main(int argc, char **argv){
 		return 1;
   string base=argv[1];
   string names[]={"color","depth","disp","metal","smooth"};
-  int num_manifolds=5;
+  string final_names[]={"color","depth","disp","metal"};
+  int num_manifolds=5,num_finals=4;
   vector<Image*> maps;
   vector<Image*> finals;
   auto basemap= new Image();
+  auto noisemap = new Image();
+  noisemap->load(base+"-noise.bmp");
   basemap->load(base+"-base.bmp");
   for(auto name: names){
     auto map= new Image();
     map->load(base+"-"+name+".bmp");
     maps.push_back(map);
-    map= new Image();
+  }
+  for(auto name: final_names){
+    auto map= new Image();
     map->init(basemap->w,basemap->h);
     finals.push_back(map);
   }
@@ -137,18 +142,20 @@ int main(int argc, char **argv){
 		for (int x=0;x<basemap->w;x++){
       auto base=basemap->get(x,y);
       auto degree=1-base.r;
+      degree = degree * noisemap->get(x,y).r * 1.6;
+      if(degree>1.f)degree=1.f;
+      if(degree<0.f)degree=0;
       for(int i=0;i<3;i++){
-        auto manifold=maps[i]->get(maps[i]->w/2,degree*maps[i]->h);
+        auto manifold=maps[i]->get(maps[i]->w/2,degree*(maps[i]->h-1));
         finals[i]->set(x,y,manifold);
       }
-      auto metal=maps[3]->get(maps[3]->w/2,degree*maps[3]->h);
-      auto smooth=maps[4]->get(maps[4]->w/2,degree*maps[4]->h);
+      auto metal=maps[3]->get(maps[3]->w/2,degree*(maps[3]->h-1));
+      auto smooth=maps[4]->get(maps[4]->w/2,degree*(maps[4]->h-1));
       finals[3]->set(x,y,Color(metal.r,0,smooth.r,smooth.r));
-      finals[4]->set(x,y,Color(metal.r,0,smooth.r,smooth.r));
 		}
 	}
-  for(int i=0;i<num_manifolds;i++){
-    finals[i]->save(base+"-out-"+names[i]+".bmp");
+  for(int i=0;i<num_finals;i++){
+    finals[i]->save(base+"-out-"+final_names[i]+".bmp");
   }
   delete basemap;
 	for(auto map:maps)
