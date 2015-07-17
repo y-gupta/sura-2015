@@ -40,12 +40,12 @@ struct BITMAPINFOHEADER                       /**** BMP file info structure ****
 };
 #pragma pack()
 
-void save_bmp(const char *filename,int w,int h,unsigned char *data,int bytesPerPixel=4){
+void save_bmp(const char *filename,int w,int h,unsigned char *data,short bytesPerPixel=4){
 	FILE *fp=fopen(filename,"wb");
 	size_t hsize=sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
 	size_t dsize=w*h*bytesPerPixel;
-	BITMAPFILEHEADER file={BF_TYPE,hsize+dsize,0,0,hsize};
-	BITMAPINFOHEADER info={sizeof(BITMAPINFOHEADER),w,-h,0,8*bytesPerPixel,0,dsize,1,1,0,0};
+	BITMAPFILEHEADER file={BF_TYPE,(unsigned int)(hsize+dsize),0,0,(unsigned int)hsize};
+	BITMAPINFOHEADER info={sizeof(BITMAPINFOHEADER),w,-h,0,(unsigned short)(8*bytesPerPixel),0,(unsigned int)dsize,1,1,0,0};
 	fwrite(&file,sizeof(file),1,fp);
 	fwrite(&info,sizeof(info),1,fp);
 	fwrite(data,dsize,1,fp);
@@ -55,11 +55,11 @@ void save_bmp(const char *filename,int w,int h,unsigned char *data,int bytesPerP
 class Color{
 public:
 	float r,g,b,a;
-	Color(float _r,float _g,float _b,float _a=1.f){
+	Color(float _r=0,float _g=0,float _b=0,float _a=1.f){
 		r=_r;g=_g;b=_b;a=_a;
 	}
-	Color(uint32_t brga){
-		decode(brga);
+	Color(uint32_t bgra){
+		decode(bgra);
 	}
 	void normalize(){
 		if(r>1.f)r=1.f;if(r<0.f)r=0.f;
@@ -70,11 +70,11 @@ public:
 	void print() const{
 		printf("%d R, %d G, %d B, %d A\n",r,g,b,a);
 	}
-	void decode(uint32_t brga){
-		r=(brga & 0x000000ff)/255.f;
-		g=((brga & 0x0000ff00)>>8)/255.f;
-		b=((brga & 0x00ff0000)>>16)/255.f;
-		a=((brga & 0xff000000)>>24)/255.f;
+	void decode(uint32_t bgra){
+		b=(bgra & 0x000000ff)/255.f;
+		g=((bgra & 0x0000ff00)>>8)/255.f;
+		r=((bgra & 0x00ff0000)>>16)/255.f;
+		a=((bgra & 0xff000000)>>24)/255.f;
 	}
 	uint32_t encode(){
 		normalize();
@@ -131,6 +131,13 @@ public:
 		puts(("Loading "+file+" ...").c_str());
 		data = stbi_load(file.c_str(), &w, &h,0,4);
 		assert(data && "Image load");
+    unsigned char tmp;
+    for(long i=0;i<w*h;i++)
+    {
+      tmp=data[i*4];
+      data[i*4]=data[i*4+2];
+      data[i*4+2]=tmp;
+    }
 		puts("Done");
 	}
 	void save(string file){
@@ -218,7 +225,7 @@ void dijkstra(int beg,int n,vector<vector<pair<float,int> > > &e,vector<float> &
 // 		val = int((v[i]*_nslots)/_max);
 // 		if(val<_nslots){
 // 			dist[val]++;
-// 		} 
+// 		}
 // 		else{
 // 			dist[_nslots]++;
 // 		}
@@ -240,7 +247,7 @@ int main(int argc, char **argv){
 	puts("Dimestion of the image(width,height):");
 	cout<<map->w<<" "<<map->h<<endl;
 
-	
+
 	puts("Getting the control points...");
 	int x,y;
 	float corrosion_value;
@@ -272,7 +279,7 @@ int main(int argc, char **argv){
 	puts("Color frequency done.");
 
 	puts("Getting unique color...");
-	
+
 	for(auto _maps : color_map){
 		for(int i=0;i<CONTROL_POINTS;i++){
 			if(_maps.first==map->get(cp[i].first,cp[i].second)) cv[i].first=colors.size();
@@ -312,12 +319,10 @@ int main(int argc, char **argv){
 			}
 			if(cpd[i][j]>1e-6) cpd[i][j] = 1.0/cpd[i][j];
 			else cpd[i][j] = FLOAT_MAX;
-
 		}
 	}
 	puts("Done.");
-	
-	puts("Generating the corrosion_color_map...");
+
 	// Corrosion and the color map
 	vector<pair<float,Color> > cor_color;
 	float deno,num;
@@ -335,10 +340,7 @@ int main(int argc, char **argv){
 			cor_color.push_back(mp(num/deno,colors[i]));
 		}
 	}
-	puts("Done.");
-	N = cor_color.size();
 
-	cout<<N<<endl;
 	int res[10]={0};
 	for(int i=0;i<N;i++){
 		if(cor_color[i].first<=1.0)
@@ -347,34 +349,39 @@ int main(int argc, char **argv){
 	for(int i=0;i<10;i++)
 		cout<<res[i]<<" ";
 	cout<<endl;
-	
+
 	puts("Generating output...");
 	Image* out = new Image();
-	out->init(1000,10000);
 
-	Image* out1 = new Image();
-	out1->init(1000,10000);
-
-	vector<int> width(10000,0);
-	for(int i=0;i<N;i++){
-		if(cor_color[i].first<1.0){
-			int h = int(cor_color[i].first*out->h);
-			for(int w=width[h];w<width[h]+5;w++){
-				out->set(w,h,cor_color[i].second);
-			}
-		 	for(int w=0;w<out->w;w++){
-				out1->set(w,h,cor_color[i].second);
-			}
-			width[h]+=5;
-			if(width[h]>=995){
-				width[h]=995;
-			}
-		}
+	out->init(100,1000);
+  vector<int> blanks(out->h,-1);
+  int minh=out->h;
+  Color last;
+	for(int i=0;i<=N;i++){
+    int h=int(cor_color[i].first*out->h);
+    if(h>=out->h)
+      h=out->h-1;
+    if(h<0)
+      continue;
+    blanks[h]=1;
+    if(minh>=h){
+      minh=h;
+      last=cor_color[i].second;
+    }
+		for(int j=0;j<out->w;j++)
+      out->set(j,h,cor_color[i].second);
 	}
-	out->save("spectrum.bmp");
-	out1->save("corrosion_color_map.bmp");
+  puts("Interpolating unknown corrosion appearances..");
+  for(int i=0;i<out->h;i++)
+  {
+    if(blanks[i]==1)
+      last=out->get(0,i);
+    else
+      for(int j=0;j<out->w;j++)
+        out->set(j,i,last);
+  }
+	out->save("cor_out.bmp");
 	puts("Done.");
 	if(map)delete map;
 	if(out)delete out;
-	if(out1)delete out1;
 }
