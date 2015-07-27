@@ -5,6 +5,7 @@
 **/TMP/
 res/
 *.bmp
+
 **/*.bmp
 *.exe
 UNITY/
