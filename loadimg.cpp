@@ -355,7 +355,7 @@ int main(int argc, char **argv){
 	Image* out = new Image();
 
 	out->init(100,1000);
-  vector<int> blanks(out->h,-1);
+  vector<int> blanks(out->h,0);
   int minh=out->h;
   Color last;
 	for(int i=0;i<=N;i++){
@@ -364,22 +364,49 @@ int main(int argc, char **argv){
       h=out->h-1;
     if(h<0)
       continue;
-    blanks[h]=1;
     if(minh>=h){
       minh=h;
       last=cor_color[i].second;
     }
+    auto avg=out->get(0,h)*blanks[h]+cor_color[i].second;
+    blanks[h]++;
+    avg = avg * (1.f/blanks[h]);
 		for(int j=0;j<out->w;j++)
-      out->set(j,h,cor_color[i].second);
+      out->set(j,h,avg);
 	}
   puts("Interpolating unknown corrosion appearances..");
+  int last_h=0,next_h=0;
+  Color next;
   for(int i=0;i<out->h;i++)
   {
-    if(blanks[i]==1)
+    if(blanks[i]!=0)
+    {
       last=out->get(0,i);
-    else
-      for(int j=0;j<out->w;j++)
-        out->set(j,i,last);
+      last_h=i;
+    }
+    else{
+      bool no_next=true;
+      for(int j=i+1;j<out->h;j++){
+        if(blanks[j]!=0){
+          next_h=j;
+          next=out->get(0,j);
+          no_next=false;
+          break;
+        }
+      }
+      if(no_next)
+        next_h=out->h-1;
+      for(;i<next_h;i++){
+        float last_w=1.f/(i-last_h),next_w=1.f/(next_h-i),tot;
+        tot=1.f/(last_w+next_w);
+        last_w*=tot;
+        next_w*=tot;
+        if(no_next)
+          last_w=1,next_w=0;
+        for(int j=0;j<out->w;j++)
+          out->set(j,i,last*last_w+next*next_w);
+      }
+    }
   }
 	out->save("cor_out.bmp");
 	puts("Done.");
