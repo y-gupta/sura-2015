@@ -4,9 +4,11 @@
 **/TEMP/
 **/TMP/
 res/
+UNITY/
 *.bmp
 
 **/*.bmp
 *.exe
-UNITY/
 **/*.exe
+*.jpg
+**/*.jpg
