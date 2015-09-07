@@ -19,6 +19,7 @@ using namespace std;
 #define CONTROL_POINTS (10)
 #define FLOAT_MAX (1e9)
 #define mp make_pair
+void histogramEqualization(Image* img);
 /**
  * @brief Distance between two colors
  * @details Used euclidean distance. Can be modified to taxicab(N-4) distance or N-8 distance
@@ -307,11 +308,11 @@ int main(int argc, char **argv){
 			if(it!=inverse_map.begin())
 			it1 = prev(it);
 			if(it!=inverse_map.end() && dist(c,it->first)<=THRESHOLD2){
-				Color tmp(it->second,it->second,it->second);
+				Color tmp(1-it->second,1-it->second,1-it->second);
 				wmap->set(i,j,tmp);
 			}
 			else if(it1!=inverse_map.end() && dist(c,it1->first)<=THRESHOLD2){
-				Color tmp(it1->second,it1->second,it1->second);
+				Color tmp(1-it1->second,1-it1->second,1-it1->second);
 				wmap->set(i,j,tmp);
 			}
 			else{
@@ -321,9 +322,46 @@ int main(int argc, char **argv){
 	}
 	wmap->save("weathering_map.bmp");
 	if(wmap)delete wmap;
-
+	
+	Image* hist = new Image();
+	hist->load("weathering_map.bmp");
+	histogramEqualization(hist);
+	hist->save("histogram.bmp");
+	if(hist)delete hist;
+	
 	out->save("cor_out.bmp");
 	puts("Done.");
 	if(map)delete map;
 	if(out)delete out;
+}
+
+void histogramEqualization(Image *img){
+	puts("Histogram Equalization...");
+	int I[256]={0};
+	int sum_I[256]={0};
+	for(int i=0;i<img->w;i++){
+		for(int j=0;j<img->h;j++){
+			if(img->get(i,j)==Color(1,0,0))continue;
+			I[int(img->get(i,j).r*255)]++;
+		}
+	}
+	sum_I[0]=I[0];
+	for(int i=1;i<256;i++)
+		sum_I[i]=sum_I[i-1]+I[i];
+
+	float new_I[256]={0};
+	for(int i=0;i<256;i++){
+		new_I[i] = (float(sum_I[i])/sum_I[255]);
+	}
+	int _I;
+	float _new_I;
+	for(int i=0;i<img->w;i++){
+		for(int j=0;j<img->h;j++){
+			if(img->get(i,j)==Color(1,0,0))continue;
+			_I = img->get(i,j).r*255;
+			_new_I=new_I[_I];
+			img->set(i,j,Color(_new_I,_new_I,_new_I));
+		}
+	}
+	puts("Done.");
 }
