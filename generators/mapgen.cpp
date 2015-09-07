@@ -1,3 +1,4 @@
+/** \file*/
 #include <iostream>
 #include <cstdio>
 #include <vector>
@@ -12,7 +13,14 @@
 using namespace std;
 
 int main(int argc, char **argv){
-	if(argc<2) return 1;
+	if(argc<2){
+		puts("Usage: <executable name> <filename>");
+		return 1;
+	}
+	/**
+	 * For any given base, we need to have base-color, base-depth, base-disp, base-metal, base-smooth, base-noise.
+	 * Using the above six gradients, we generate corresponding maps correlating to input weathering degree map.
+	 */
 	string base=argv[1];
 	string names[]={"color","depth","disp","metal","smooth","noise"};
 	int num_manifolds=5;

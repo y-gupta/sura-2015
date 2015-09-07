@@ -1,0 +1,122 @@
+\hypertarget{colorgen_8cpp}{}\section{colorgen.\+cpp File Reference}
+\label{colorgen_8cpp}\index{colorgen.\+cpp@{colorgen.\+cpp}}
+{\ttfamily \#include $<$iostream$>$}\\*
+{\ttfamily \#include $<$cstdio$>$}\\*
+{\ttfamily \#include $<$vector$>$}\\*
+{\ttfamily \#include $<$algorithm$>$}\\*
+{\ttfamily \#include $<$string$>$}\\*
+{\ttfamily \#include $<$cassert$>$}\\*
+{\ttfamily \#include $<$cstdint$>$}\\*
+{\ttfamily \#include $<$queue$>$}\\*
+{\ttfamily \#include $<$limits$>$}\\*
+{\ttfamily \#include $<$cfloat$>$}\\*
+{\ttfamily \#include $<$unordered\+\_\+map$>$}\\*
+{\ttfamily \#include $<$map$>$}\\*
+{\ttfamily \#include \char`\"{}common.\+h\char`\"{}}\\*
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{colorgen_8cpp_a4679d8ea8690999a6c6c7c0cb245c879}{}\#define {\bfseries T\+H\+R\+E\+S\+H\+O\+L\+D}~(3e-\/2)\label{colorgen_8cpp_a4679d8ea8690999a6c6c7c0cb245c879}
+
+\item 
+\hypertarget{colorgen_8cpp_a2d435d1f6b063d75aa64de7e49d10223}{}\#define {\bfseries C\+O\+N\+T\+R\+O\+L\+\_\+\+P\+O\+I\+N\+T\+S}~(8)\label{colorgen_8cpp_a2d435d1f6b063d75aa64de7e49d10223}
+
+\item 
+\hypertarget{colorgen_8cpp_a2124ca619b2968b0cc8429e2a7036869}{}\#define {\bfseries F\+L\+O\+A\+T\+\_\+\+M\+A\+X}~(1e6)\label{colorgen_8cpp_a2124ca619b2968b0cc8429e2a7036869}
+
+\item 
+\hypertarget{colorgen_8cpp_aea466a7139309b17bce61d5ccb03e195}{}\#define {\bfseries mp}~make\+\_\+pair\label{colorgen_8cpp_aea466a7139309b17bce61d5ccb03e195}
+
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+float \hyperlink{colorgen_8cpp_a716cb6a99c5b36d3ed0f66f514fd3150}{dist} (const \hyperlink{class_color}{Color} \&c1, const \hyperlink{class_color}{Color} \&c2)
+\begin{DoxyCompactList}\small\item\em Distance between two colors. \end{DoxyCompactList}\item 
+void \hyperlink{colorgen_8cpp_a3f305bc1e6c167e709bac9b8da9f82e8}{dijkstra} (int beg, int n, vector$<$ vector$<$ pair$<$ float, int $>$ $>$ $>$ \&e, vector$<$ float $>$ \&cur)
+\begin{DoxyCompactList}\small\item\em Dijkstra shortest path. \end{DoxyCompactList}\item 
+int \hyperlink{colorgen_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}{main} (int argc, char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+map$<$ \hyperlink{class_color}{Color}, int $>$ \hyperlink{colorgen_8cpp_ab682eab3233d3c8752678cc9a89e0616}{color\+\_\+map}
+\item 
+vector$<$ \hyperlink{class_color}{Color} $>$ \hyperlink{colorgen_8cpp_a21d450c087ddf4e412555b23961479b9}{colors}
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{colorgen_8cpp_a3f305bc1e6c167e709bac9b8da9f82e8}{}\index{colorgen.\+cpp@{colorgen.\+cpp}!dijkstra@{dijkstra}}
+\index{dijkstra@{dijkstra}!colorgen.\+cpp@{colorgen.\+cpp}}
+\subsubsection[{dijkstra(int beg, int n, vector$<$ vector$<$ pair$<$ float, int $>$ $>$ $>$ \&e, vector$<$ float $>$ \&cur)}]{\setlength{\rightskip}{0pt plus 5cm}void dijkstra (
+\begin{DoxyParamCaption}
+\item[{int}]{beg, }
+\item[{int}]{n, }
+\item[{vector$<$ vector$<$ pair$<$ float, int $>$ $>$ $>$ \&}]{e, }
+\item[{vector$<$ float $>$ \&}]{cur}
+\end{DoxyParamCaption}
+)}\label{colorgen_8cpp_a3f305bc1e6c167e709bac9b8da9f82e8}
+
+
+Dijkstra shortest path. 
+
+Calculates the shortest path from source vertex to all vertices in graph
+
+
+\begin{DoxyParams}{Parameters}
+{\em beg} & Source vertex \\
+\hline
+{\em n} & Total number of vertics in graph \\
+\hline
+{\em cur} & cur\mbox{[}i\mbox{]} represent path length to reach vertex i at some point in algorithm. Finally it contains shortest path. \\
+\hline
+{\em e} & Adjanceny of graph. e\mbox{[}i\mbox{]} contains list of all neighbours along with edge cost \\
+\hline
+\end{DoxyParams}
+\hypertarget{colorgen_8cpp_a716cb6a99c5b36d3ed0f66f514fd3150}{}\index{colorgen.\+cpp@{colorgen.\+cpp}!dist@{dist}}
+\index{dist@{dist}!colorgen.\+cpp@{colorgen.\+cpp}}
+\subsubsection[{dist(const Color \&c1, const Color \&c2)}]{\setlength{\rightskip}{0pt plus 5cm}float dist (
+\begin{DoxyParamCaption}
+\item[{const {\bf Color} \&}]{c1, }
+\item[{const {\bf Color} \&}]{c2}
+\end{DoxyParamCaption}
+)}\label{colorgen_8cpp_a716cb6a99c5b36d3ed0f66f514fd3150}
+
+
+Distance between two colors. 
+
+Used euclidean distance. Can be modified to taxicab(N-\/4) distance or N-\/8 distance \hypertarget{colorgen_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}{}\index{colorgen.\+cpp@{colorgen.\+cpp}!main@{main}}
+\index{main@{main}!colorgen.\+cpp@{colorgen.\+cpp}}
+\subsubsection[{main(int argc, char $\ast$$\ast$argv)}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{int}]{argc, }
+\item[{char $\ast$$\ast$}]{argv}
+\end{DoxyParamCaption}
+)}\label{colorgen_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}
+cv represents control point in color space. cv\mbox{[}i\mbox{]} -\/ (idx,val) where idx = index/position of color in unique color array, val = corrosion value We thus get color information corresponding to corrosion value.
+
+cp represents control points in the pixel space. cp\mbox{[}i\mbox{]} -\/ (x,y) where x,y are coordinates of control points entered by user
+
+Histogram processing of the image
+
+Extracting unique color from the image and number of pixel corresponding to each color.
+
+Obtain unique color neglecting frequency. Also corresponding to each control point marked by the user, find corrosion value. This gives us rough information of which color represents what degree of corrosion.(Entirely based on user interaction. We are not extracting this information from image.)
+
+Generating the graph For each color c, we calculate distance of all the colors from c. Only those color whose value is less then some threshold, we consider it to be neighbour of c. This way adjanceny list of graph is generated.
+
+Control point Distance Now for each of control point marked by the user, we apply dijkstra algorithm to find shortest path considering control point as source. Thus we evaluate inverse distance for each control point.
+
+Distributing the corrosion in the graph Now from each of control point, we leak to corrosion value along the graph. Leakage is directly proportional to the inverse distance caluculated with dijkstra algorithm. This way we get corrosion value for all the vertices. Also using this, we get mapping from corrosion value to color.
+
+Generating output Now for each vertex in the graph, we have corrosion value calculated from control points. Using this corrosion value, and color of corresponding pixel, we generate spectrum of corrosion appearance. This shows appearance at each corrosion degree value.
+
+\subsection{Variable Documentation}
+\hypertarget{colorgen_8cpp_ab682eab3233d3c8752678cc9a89e0616}{}\index{colorgen.\+cpp@{colorgen.\+cpp}!color\+\_\+map@{color\+\_\+map}}
+\index{color\+\_\+map@{color\+\_\+map}!colorgen.\+cpp@{colorgen.\+cpp}}
+\subsubsection[{color\+\_\+map}]{\setlength{\rightskip}{0pt plus 5cm}map$<${\bf Color},int$>$ color\+\_\+map}\label{colorgen_8cpp_ab682eab3233d3c8752678cc9a89e0616}
+color\+\_\+map\mbox{[}i\mbox{]} -\/ Represent color with its frequency in the image. This gives us information about histogram of the image. \hypertarget{colorgen_8cpp_a21d450c087ddf4e412555b23961479b9}{}\index{colorgen.\+cpp@{colorgen.\+cpp}!colors@{colors}}
+\index{colors@{colors}!colorgen.\+cpp@{colorgen.\+cpp}}
+\subsubsection[{colors}]{\setlength{\rightskip}{0pt plus 5cm}vector$<${\bf Color}$>$ colors}\label{colorgen_8cpp_a21d450c087ddf4e412555b23961479b9}
+colors -\/ Represent unique color of image. We here do not consider frequency of colors. 

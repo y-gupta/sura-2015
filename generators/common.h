@@ -68,7 +68,7 @@ public:
     if(a>1.f)a=1.f;if(a<0.f)a=0.f;
   }
   void print() const{
-    printf("%d R, %d G, %d B, %d A\n",r,g,b,a);
+    printf("%f R, %f G, %f B, %f A\n",r,g,b,a);
   }
   void decode(uint32_t bgra){
     b=(bgra & 0x000000ff)/255.f;
@@ -84,6 +84,9 @@ public:
   }
   Color operator *(const Color &_){
     return Color(r*_.r,g*_.g,b*_.b,a*_.a);
+  }
+  Color operator /(int k){
+    return Color(r/k,g/k,b/k,a/k);
   }
   Color operator +(const Color &_){
     return Color(r+_.r,g+_.g,b+_.b,a+_.a);
