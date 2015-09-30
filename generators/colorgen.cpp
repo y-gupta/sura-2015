@@ -175,9 +175,9 @@ int main(int argc, char **argv){
 			}
 			if(cpd[i][j]>1e-6) cpd[i][j] = 1.0/cpd[i][j];
 			else{
-				cout<<"FLOAT_MAX"<<endl;
+				// cout<<"FLOAT_MAX"<<endl;
 				cpd[i][j] = FLOAT_MAX;
-				cout<<i<<" "<<j<<endl;
+				// cout<<i<<" "<<j<<endl;
 			}
 		}
 	}
@@ -200,7 +200,7 @@ int main(int argc, char **argv){
 				flag=1;
 				if(cpd[j][i]==FLOAT_MAX){
 					flag=2;
-					cout<<j<<" "<<i<<endl;
+					// cout<<j<<" "<<i<<endl;
 				}
 				deno += cpd[j][i];
 				num += cpd[j][i]*cv[j].second;
@@ -323,11 +323,11 @@ int main(int argc, char **argv){
 	wmap->save("weathering_map.bmp");
 	if(wmap)delete wmap;
 	
-	Image* hist = new Image();
-	hist->load("weathering_map.bmp");
-	histogramEqualization(hist);
-	hist->save("histogram.bmp");
-	if(hist)delete hist;
+	// Image* hist = new Image();
+	// hist->load("weathering_map.bmp");
+	// histogramEqualization(hist);
+	// hist->save("histogram.bmp");
+	// if(hist)delete hist;
 	
 	out->save("cor_out.bmp");
 	puts("Done.");
@@ -335,33 +335,33 @@ int main(int argc, char **argv){
 	if(out)delete out;
 }
 
-void histogramEqualization(Image *img){
-	puts("Histogram Equalization...");
-	int I[256]={0};
-	int sum_I[256]={0};
-	for(int i=0;i<img->w;i++){
-		for(int j=0;j<img->h;j++){
-			if(img->get(i,j)==Color(1,0,0))continue;
-			I[int(img->get(i,j).r*255)]++;
-		}
-	}
-	sum_I[0]=I[0];
-	for(int i=1;i<256;i++)
-		sum_I[i]=sum_I[i-1]+I[i];
+// void histogramEqualization(Image *img){
+// 	puts("Histogram Equalization...");
+// 	int I[256]={0};
+// 	int sum_I[256]={0};
+// 	for(int i=0;i<img->w;i++){
+// 		for(int j=0;j<img->h;j++){
+// 			if(img->get(i,j)==Color(1,0,0))continue;
+// 			I[int(img->get(i,j).r*255)]++;
+// 		}
+// 	}
+// 	sum_I[0]=I[0];
+// 	for(int i=1;i<256;i++)
+// 		sum_I[i]=sum_I[i-1]+I[i];
 
-	float new_I[256]={0};
-	for(int i=0;i<256;i++){
-		new_I[i] = (float(sum_I[i])/sum_I[255]);
-	}
-	int _I;
-	float _new_I;
-	for(int i=0;i<img->w;i++){
-		for(int j=0;j<img->h;j++){
-			if(img->get(i,j)==Color(1,0,0))continue;
-			_I = img->get(i,j).r*255;
-			_new_I=new_I[_I];
-			img->set(i,j,Color(_new_I,_new_I,_new_I));
-		}
-	}
-	puts("Done.");
-}
+// 	float new_I[256]={0};
+// 	for(int i=0;i<256;i++){
+// 		new_I[i] = (float(sum_I[i])/sum_I[255]);
+// 	}
+// 	int _I;
+// 	float _new_I;
+// 	for(int i=0;i<img->w;i++){
+// 		for(int j=0;j<img->h;j++){
+// 			if(img->get(i,j)==Color(1,0,0))continue;
+// 			_I = img->get(i,j).r*255;
+// 			_new_I=new_I[_I];
+// 			img->set(i,j,Color(_new_I,_new_I,_new_I));
+// 		}
+// 	}
+// 	puts("Done.");
+// }
