@@ -1,0 +1,28 @@
+Generating appearance manifold (diffuse color only) from image:
+
+First, we obtain unique colors (sampled down to reduce problem size in subsequent steps) present in the given image. These colors form the nodes of a digraph.
+To decide the neighbours of a node in the graph, we calculate distance of each node to given node and if it is within a set threshold, we add an edge b/w the nodes with weight as the distance we just calculated. This distance is the euclidean distance b/w colors in RGB space.
+
+User is asked to input some N control-points, which are pairs of position in the image and an associated corrosion degree (decided by the user).
+
+Next, we find the nodes corresponding to the given control points, and assign the corrosion degree given by user to these nodes. These values are the basis for assigning corrosion degrees to other nodes.
+
+Now for each node (corresponding to a control point), we calculate single-source shortest path distance to all other nodes in out generated digraph. We use dijkstra's algorithm for this.
+
+Next, we calculate the corrosion degree value for all other nodes. For each node, we have the shortest-path distance to each control-point node in the digraph. We then calculate a weighted sum of corrosion degrees of the control-point nodes based on the distance to respective control-point node. We use weights inversely proportional to the distance. This gives an effect of corrosion degree leaking around the control-point node, with each control-point node maintaining its value as given by the user.
+
+There may be some control-point nodes which are at infinite distance from a given node, which means that the control-point node and the given node lie in separate disconnected components of the digraph. In this case, the corrosion-degree of the given node depends only on the control-points which lie in it's connected component in the graph. This results in better results as we do not try to explicitly relate control-points which do not have a gradual gradient to each-other in the colors of the image. The level of connected-ness is decided by the threshold we used earlier to determine neighbours of a color-node, and the distance metric we used for colors.
+
+
+After the last step, we have corrosion-degree values for each node in the graph. Now we calculate inverse mapping from corrosion-degree to color value of the node. We also down-sample the corrosion values to the number of levels we want in our output gradient (1000 in our case).
+This results in a one-to-many mapping, with multiple colors for each corrosion-degree. In our implementation, we simply average the color values of each node that maps to a single corrosion value and obtain a one-to-one mapping b/w corrosion-degree and color. However, we still have corrosion degrees for which no color-nodes existed. This results in undefined colors for several corrosion-degrees.
+To assign color values to these corrosion-degrees, we use linear interpolation b/w the nearest known corrosion-degree - color pairs. This completes our one-to-one corrosion-color map, wich we finally output as a gradient where color at top corresponds to 0% corrosion degree and color at bottom to 100% corrosion degree.
+
+
+
+# Generating texture maps for a given corrosion-degree map
+
+We take a corrosion-degree map as input (called 'base') and multiply each pixel's color with a given noise map (with average value 0.5) such that each corrosion-degree changes by a maximum set percentage ('alpha').
+  degree' = ((1-alpha)+noise*alpha*2)*degree
+In our present code, degree' = 1.5 * noise * degree, where 1.5 was chosen empirically as it produced better results for a particular set of inputs we were using.
+Apart from the 'base' and 'noise', we also take appearance manifold in the form of diffuse gradient, depth gradient, displacement gradient, metallicity and smoothness gradients. Then a simple mapping is done from degree' to diffuse color, depth, displacement, metallicity and smoothness based on the input gradients to generate corresponding texture maps.
