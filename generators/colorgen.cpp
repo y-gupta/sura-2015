@@ -14,9 +14,10 @@
 #include "common.h"
 using namespace std;
 
-#define THRESHOLD (3e-2)
-#define THRESHOLD2 (3e-1)
-#define CONTROL_POINTS (10)
+#define THRESHOLD (2e-2)
+#define MAX_NEIGHBOURS (8)
+#define THRESHOLD2 (1e-1)
+int CONTROL_POINTS;
 #define FLOAT_MAX (1e9)
 #define mp make_pair
 void histogramEqualization(Image* img);
@@ -24,14 +25,16 @@ void histogramEqualization(Image* img);
  * @brief Distance between two colors
  * @details Used euclidean distance. Can be modified to taxicab(N-4) distance or N-8 distance
  */
-float dist(const Color& c1,const Color& c2){
+float dist(const Color& _c1,const Color& _c2){
+  Color c1=_c1.YUV();
+  Color c2=_c2.YUV();
 	return sqrt((c1.r-c2.r)*(c1.r-c2.r) + (c1.g-c2.g)*(c1.g-c2.g) + (c1.b-c2.b)*(c1.b-c2.b));
 }
 
 /**
  * @brief Dijkstra shortest path
  * @details Calculates the shortest path from source vertex to all vertices in graph
- * 
+ *
  * @param beg Source vertex
  * @param n Total number of vertics in graph
  * @param cur cur[i] represent path length to reach vertex i at some point in algorithm. Finally it contains shortest path.
@@ -67,10 +70,10 @@ vector<Color> colors;
 vector<vector<pair<float,int> > > adj;
 int main(int argc, char **argv){
 	if(argc<2){
-		puts("Usage: <executable> <file_name> <file_name_segment>");
+		puts("Usage: <executable> <file_name>");
 		return 1;
 	}
-	
+
 	string name(argv[1]);
 	Image* map = new Image();
 	map->load(name);
@@ -92,16 +95,19 @@ int main(int argc, char **argv){
 	 *	cp[i] - (x,y) where x,y are coordinates of control points entered by user
 	 */
 	vector<pair<int,int> > cp(0);
-	for(int i=0;i<CONTROL_POINTS;i++){
-		puts("Enter x y val:");
-		cin>>x>>y;
-		cin>>corrosion_value;
+	while(1){
+		puts("Enter x y val (-1 to end):");
+		cin>>x;
+    if(!cin || x<0)
+      break;
+		cin>>y>>corrosion_value;
 		cv.push_back(mp(0,corrosion_value));
 		cp.push_back(mp(x,y));
 	}
+  CONTROL_POINTS=cp.size();
 	puts("Control points done.");
 
-	
+
 	/**
 	 * @brief Histogram processing of the image
 	 * @details Extracting unique color from the image and number of pixel corresponding to each color.
@@ -155,6 +161,12 @@ int main(int argc, char **argv){
 			}
 		}
 	}
+  for(auto &e: adj){
+    if(e.size()>MAX_NEIGHBOURS){
+      sort(e.begin(),e.end());
+      e.erase(e.begin()+MAX_NEIGHBOURS,e.end());
+    }
+  }
 
 	puts("Generatin graph done.");
 
@@ -208,15 +220,15 @@ int main(int argc, char **argv){
 			}
 		}
 		if(flag){
-			if(flag==2){
-				printf("%f\n",num/deno);
-			}
+			// if(flag==2){
+			// 	printf("%f\n",num/deno);
+			// }
 			cor_color.push_back(mp(num/deno,colors[i]));
 		}
 	}
 	N = cor_color.size();
-	
-	
+
+
 	int res[10]={0};
 	for(int i=0;i<N;i++){
 		if(cor_color[i].first<=1.0)
@@ -291,46 +303,35 @@ int main(int argc, char **argv){
       i--;
     }
   }
-  
-  std::map<Color,float> inverse_map;
-  for(int i=0;i<out->h;i++){
-  	c=out->get((out->w)>>1,i);
-  	inverse_map.insert(mp(c,float(i)/out->h));
-  }
-  cout<<"Done.";
+
+  out->save(name+"-color.bmp");
 
   Image* wmap = new Image();
 	wmap->load(name);
 	for(int i=0;i<map->w;i++){
 		for(int j=0;j<map->h;j++){
 			c = map->get(i,j);
-			auto it = inverse_map.lower_bound(c),it1=it;
-			if(it!=inverse_map.begin())
-			it1 = prev(it);
-			if(it!=inverse_map.end() && dist(c,it->first)<=THRESHOLD2){
-				Color tmp(1-it->second,1-it->second,1-it->second);
-				wmap->set(i,j,tmp);
-			}
-			else if(it1!=inverse_map.end() && dist(c,it1->first)<=THRESHOLD2){
-				Color tmp(1-it1->second,1-it1->second,1-it1->second);
-				wmap->set(i,j,tmp);
-			}
-			else{
-				wmap->set(i,j,Color(1,0,0));
-			}
+      float min_dist=THRESHOLD2;
+      Color nearest=Color(1,0,0);
+      for(int i=0;i<out->h;i++){
+        auto c1 = out->get(0,i);
+        float d=dist(c1,c);
+        if(d<min_dist){
+          min_dist=d;
+          nearest=Color(1,1,1)*(float(i)/out->h);
+        }
+      }
+			wmap->set(i,j,nearest);
 		}
 	}
-	wmap->save("weathering_map.bmp");
+	wmap->save(name+"-base.bmp");
+  cout<<"Done all";
 	if(wmap)delete wmap;
-	
 	// Image* hist = new Image();
 	// hist->load("weathering_map.bmp");
 	// histogramEqualization(hist);
 	// hist->save("histogram.bmp");
 	// if(hist)delete hist;
-	
-	out->save("cor_out.bmp");
-	puts("Done.");
 	if(map)delete map;
 	if(out)delete out;
 }

@@ -14,9 +14,14 @@ using namespace std;
 
 int main(int argc, char **argv){
 	if(argc<2){
-		puts("Usage: <executable name> <filename>");
+		puts("Usage: <executable name> <filename> [<alpha>]");
 		return 1;
 	}
+  float alpha=0;
+  if(argc>=3){
+    sscanf(argv[3],"%f",&alpha);
+    cout<<"Using alpha = "<<alpha<<endl;
+  }
 	/**
 	 * For any given base, we need to have base-color, base-depth, base-disp, base-metal, base-smooth, base-noise.
 	 * Using the above six gradients, we generate corresponding maps correlating to input weathering degree map.
@@ -39,10 +44,18 @@ int main(int argc, char **argv){
 	for (int y=0;y<basemap->h;y++){
 		for (int x=0;x<basemap->w;x++){
 			auto base=basemap->get(x,y);
+      if(fabs(base.r-base.g) > EPS || fabs(base.r-base.b) > EPS || fabs(base.b-base.g) > EPS){
+        finals[0]->set(x,y,base);
+        for(int i=1;i<5;i++)
+          finals[i]->set(x,y,Color(0.5,0.5,0.5,0.5));
+        continue;
+      }
 			auto degree=base.r;
-      degree= 1.5 * degree * maps[5]->get(x,y).r;
+      degree = ((1-alpha)+maps[5]->get(x,y).r*alpha*2)*degree;
       if(degree>1)
         degree=1;
+      if(degree<0)
+        degree=0;
       basemap->set(x,y,Color(1,1,1)*degree);
       float h;
 			for(int i=0;i<3;i++){

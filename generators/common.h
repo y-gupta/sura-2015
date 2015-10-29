@@ -2,7 +2,7 @@
 #include <string>
 #include <cstdio>
 #include <cassert>
-#define EPS (1.0/32)
+#define EPS (1.0/64)
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb-image.h"
@@ -52,13 +52,10 @@ void save_bmp(const char *filename,int w,int h,unsigned char *data,short bytesPe
   fclose(fp);
 }
 
-#define RGB 1
-#define HSV 2
 #define PI 3.1415
-const int model=HSV;
 // inline void HSI2RGB(double h, double s, double i, double* r, double* g, double* b)
 // {
-//   double x = i * (1 - s);   
+//   double x = i * (1 - s);
 //   if(h < 2 * M_PI / 3)
 //   {
 //     double y = i * (1 + (s * cos(h)) / (cos(M_PI / 3 - h)));
@@ -82,14 +79,10 @@ class Color{
 public:
   float r,g,b,a;
   Color(float _r=0,float _g=0,float _b=0,float _a=1.f){
-    r=_r;g=_g;b=_b;a=_a;  
-    if(model==HSV)
-      convertRGBtoHSV();
+    r=_r;g=_g;b=_b;a=_a;
   }
   Color(uint32_t bgra){
     decode(bgra);
-    if(model==HSV)
-      convertRGBtoHSV();
   }
   void convertRGBtoHSV(){
     double h,s,v;
@@ -102,14 +95,30 @@ public:
     double gn = g/(r+g+b);
     double bn = b/(r+g+b);
     h = acos((0.5*((rn-gn) + (rn-bn)))/(sqrt((rn-gn)*(rn-gn) + (rn-bn)*(gn-bn))));
-    if(b>g)h = 2*PI - h; 
+    if(b>g)h = 2*PI - h;
     s = 1 - 3* min(rn,min(gn,bn));
     v=(r+g+b)/3.0;
     r=h/(2*PI),g=s,b=v;
   }
+  Color HSV() const{
+    double h,s,v;
+    if(fabs(r-b)<=EPS && fabs(r-b)<=EPS){
+      h=0;s=0;v=r;
+      return Color(h,s,v);
+    }
+    double rn = r/(r+g+b);
+    double gn = g/(r+g+b);
+    double bn = b/(r+g+b);
+    h = acos((0.5*((rn-gn) + (rn-bn)))/(sqrt((rn-gn)*(rn-gn) + (rn-bn)*(gn-bn))));
+    if(b>g)h = 2*PI - h;
+    s = 1 - 3* min(rn,min(gn,bn));
+    v=(r+g+b)/3.0;
+    h=h/(2*PI);
+    return Color(h,s,v);
+  }
   void convertHSVtoRGB(){
     double h=2*PI*r,s=g,v=b;
-    double x = v*(1-s),y,z;   
+    double x = v*(1-s),y,z;
     if(h < 2*PI/3){
       y = v*(1 + (s*cos(h)) /(cos(PI/3 - h)));
       z = 3*v - (x + y);
@@ -126,6 +135,12 @@ public:
       r = z; g = x; b = y;
     }
   }
+  Color YUV() const{
+    float Y=0.299*r+0.587*g+0.114*b;
+    float U=0.492*(b-Y);
+    float V=0.877*(r-Y);
+    return Color(Y,U,V);
+  }
   void normalize(){
     if(r>1.f)r=1.f;if(r<0.f)r=0.f;
     if(g>1.f)g=1.f;if(g<0.f)g=0.f;
@@ -133,10 +148,7 @@ public:
     if(a>1.f)a=1.f;if(a<0.f)a=0.f;
   }
   void print() const{
-    if(model==RGB)
       printf("%f R, %f G, %f B, %f A\n",r,g,b,a);
-    else
-      printf("%f H, %f S, %f V\n",r,g,b);
   }
   void decode(uint32_t bgra){
     b=(bgra & 0x000000ff)/255.f;
@@ -146,11 +158,7 @@ public:
   }
   uint32_t encode(){
     normalize();
-    if(model==HSV)
-      convertHSVtoRGB();
     uint32_t bgra=int(b*255)+(int(g*255)<<8)+(int(r*255)<<16)+(int(a*255)<<24);
-    if(model==HSV)
-      convertRGBtoHSV();
     return bgra;
   }
   Color operator *(const Color &_){

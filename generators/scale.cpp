@@ -60,7 +60,7 @@ void scaleUpReplication(Image& in,Image& out){
 	for(int i=0;i<out.h;i+=2){
 		for(int j=0;j<out.w;j+=2){
 			out.set(i,j,in.get(i>>1,j>>1));
-			out.set(i,j+1,in.get(i>>1,j>>1));			
+			out.set(i,j+1,in.get(i>>1,j>>1));
 		}
 	}
 	puts("Done");
@@ -85,27 +85,13 @@ int main(int argc, char** argv){
 	string name(argv[1]);
 	Image in;
 	in.load(name);
-	
-	Image out1;
-	out1.init(in.w/2,in.h/2);
-	Image out2;
-	out2.init(in.w/2,in.h/2);
+
 	Image out3;
 	out3.init(in.w<<1,in.h<<1);
-	Image out4;
-	out4.init(in.w<<1,in.h<<1);
-
-	scaleDownDecimation(in,out1);
-	scaleDownSkip(in,out2);
-
 	scaleUpInterpolation(in,out3);
-	scaleUpReplication(in,out4);
 
-	
-	out1.save("smallDecimation.bmp");
-	out2.save("smallSkip.bmp");
+
 	out3.save("bigInterpolation.bmp");
-	out4.save("bigReplication.bmp");
 	puts("Images saved");
 	return 0;
 }
