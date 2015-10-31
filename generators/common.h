@@ -78,17 +78,48 @@ void save_bmp(const char *filename,int w,int h,unsigned char *data,short bytesPe
 class Color{
 public:
   float r,g,b,a;
+  double x,y,z,w;
   Color(float _r=0,float _g=0,float _b=0,float _a=1.f){
-    r=_r;g=_g;b=_b;a=_a;
+    x=r=_r;y=g=_g;z=b=_b;w=a=_a;
+    // toYUV();
+    toLab();
   }
   Color(uint32_t bgra){
     decode(bgra);
+    x=r;y=g;z=b;w=a;
+    // toYUV();
+    toLab();
   }
-  void convertRGBtoHSV(){
+  /*
+    Lab, xyz and linearRGB conversions are Copyright (c) 2011, Cory Nelson (phrosty@gmail.com)
+    See LICENCE and DISCLAIMER From http://svn.int64.org/viewvc/int64/colors/color.c?view=markup
+  */
+  double rgb_to_linear(double c)
+  {
+    return c > (0.0031308 * 12.92) ? pow(c * (1.0 / 1.055) + (0.055 / 1.055), 2.4) : c * (1.0 / 12.92);
+  }
+
+  double xyz_to_lab(double c)
+  {
+    return c > 216.0 / 24389.0 ? pow(c, 1.0 / 3.0) : c * (841.0/108.0) + (4.0/29.0);
+  }
+  void toLab(){
+    double R=rgb_to_linear(r);
+    double G=rgb_to_linear(g);
+    double B=rgb_to_linear(b);
+    double X = xyz_to_lab(R * (10135552.0/23359437.0) + G * (8788810.0/23359437.0) + B * (4435075.0/23359437.0));
+    double Y = xyz_to_lab(R * (871024.0/4096299.0)    + G * (8788810.0/12288897.0) + B * (887015.0/12288897.0));
+    double Z = xyz_to_lab(R * (158368.0/8920923.0)    + G * (8788810.0/80288307.0) + B * (70074185.0/80288307.0));
+    // normalized XYZ -> Lab
+    x = Y * 116.0 - 16.0;
+    y = (X - Y) * 500.0;
+    z = (Y - Z) * 200.0;
+    // x*=0.001;y*=0.001;z*=0.001;//to make comparable with RGB
+  }
+  void toHSV(){
     double h,s,v;
-    if(fabs(r-b)<=EPS && fabs(r-b)<=EPS){
-      h=0;s=0;v=r;
-      r=h;g=s;b=v;
+    if(fabs(r-b)<=EPS && fabs(r-g)<=EPS){
+      x=0;y=0;z=r;
       return;
     }
     double rn = r/(r+g+b);
@@ -98,48 +129,13 @@ public:
     if(b>g)h = 2*PI - h;
     s = 1 - 3* min(rn,min(gn,bn));
     v=(r+g+b)/3.0;
-    r=h/(2*PI),g=s,b=v;
-  }
-  Color HSV() const{
-    double h,s,v;
-    if(fabs(r-b)<=EPS && fabs(r-b)<=EPS){
-      h=0;s=0;v=r;
-      return Color(h,s,v);
-    }
-    double rn = r/(r+g+b);
-    double gn = g/(r+g+b);
-    double bn = b/(r+g+b);
-    h = acos((0.5*((rn-gn) + (rn-bn)))/(sqrt((rn-gn)*(rn-gn) + (rn-bn)*(gn-bn))));
-    if(b>g)h = 2*PI - h;
-    s = 1 - 3* min(rn,min(gn,bn));
-    v=(r+g+b)/3.0;
     h=h/(2*PI);
-    return Color(h,s,v);
+    x=h;y=s;z=v;
   }
-  void convertHSVtoRGB(){
-    double h=2*PI*r,s=g,v=b;
-    double x = v*(1-s),y,z;
-    if(h < 2*PI/3){
-      y = v*(1 + (s*cos(h)) /(cos(PI/3 - h)));
-      z = 3*v - (x + y);
-      b = x; r = y; g = z;
-    }
-    else if(h < 4 * PI / 3){
-      y = v * (1 + (s * cos(h - 2 * PI / 3)) / (cos(PI / 3 - (h  - 2 * PI / 3))));
-      z = 3 * v - (x + y);
-      r = x; g = y; b = z;
-    }
-    else{
-      y = v * (1 + (s * cos(h - 4 * PI / 3)) / (cos(PI / 3 - (h  - 4 * PI / 3))));
-      z = 3 * v - (x + y);
-      r = z; g = x; b = y;
-    }
-  }
-  Color YUV() const{
-    float Y=0.299*r+0.587*g+0.114*b;
-    float U=0.492*(b-Y);
-    float V=0.877*(r-Y);
-    return Color(Y,U,V);
+  void toYUV(){
+    x=0.299*r+0.587*g+0.114*b;
+    y=0.492*(b-x);
+    z=0.877*(r-x);
   }
   void normalize(){
     if(r>1.f)r=1.f;if(r<0.f)r=0.f;
@@ -148,7 +144,7 @@ public:
     if(a>1.f)a=1.f;if(a<0.f)a=0.f;
   }
   void print() const{
-      printf("%f R, %f G, %f B, %f A\n",r,g,b,a);
+      printf("(%.3f,%.3f,%.3f,%.3f)-(%.3f,%.3f,%.3f)\n",r,g,b,a,x,y,z);
   }
   void decode(uint32_t bgra){
     b=(bgra & 0x000000ff)/255.f;
@@ -186,6 +182,7 @@ public:
   }
   Color& operator =(const Color &_){
     r=_.r;g=_.g;b=_.b;a=_.a;
+    x=_.x;y=_.y;z=_.z;w=_.w;
     return *this;
   }
 };

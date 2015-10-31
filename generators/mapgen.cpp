@@ -13,13 +13,13 @@
 using namespace std;
 
 int main(int argc, char **argv){
-	if(argc<2){
+	if(argc<=1){
 		puts("Usage: <executable name> <filename> [<alpha>]");
 		return 1;
 	}
   float alpha=0;
   if(argc>=3){
-    sscanf(argv[3],"%f",&alpha);
+    sscanf(argv[2],"%f",&alpha);
     cout<<"Using alpha = "<<alpha<<endl;
   }
 	/**

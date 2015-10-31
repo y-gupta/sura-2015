@@ -14,9 +14,9 @@
 #include "common.h"
 using namespace std;
 
-#define THRESHOLD (2e-2)
-#define MAX_NEIGHBOURS (8)
-#define THRESHOLD2 (1e-1)
+#define THRESHOLD (10)
+#define MAX_NEIGHBOURS (12)
+#define THRESHOLD2 (2000)
 int CONTROL_POINTS;
 #define FLOAT_MAX (1e9)
 #define mp make_pair
@@ -25,11 +25,13 @@ void histogramEqualization(Image* img);
  * @brief Distance between two colors
  * @details Used euclidean distance. Can be modified to taxicab(N-4) distance or N-8 distance
  */
-float dist(const Color& _c1,const Color& _c2){
-  Color c1=_c1.YUV();
-  Color c2=_c2.YUV();
-	return sqrt((c1.r-c2.r)*(c1.r-c2.r) + (c1.g-c2.g)*(c1.g-c2.g) + (c1.b-c2.b)*(c1.b-c2.b));
+float dist(const Color& c1,const Color& c2){
+	return sqrt((c1.x-c2.x)*(c1.x-c2.x) + (c1.y-c2.y)*(c1.y-c2.y) + (c1.z-c2.z)*(c1.z-c2.z));
 }
+
+// float dist(const Color& c1,const Color& c2){
+//   return sqrt(pow(c1.r-c2.r,4) + pow(c1.g-c2.g,4) + pow(c1.b-c2.b,4));
+// }
 
 /**
  * @brief Dijkstra shortest path
@@ -166,6 +168,7 @@ int main(int argc, char **argv){
       sort(e.begin(),e.end());
       e.erase(e.begin()+MAX_NEIGHBOURS,e.end());
     }
+    assert(e.size()<=MAX_NEIGHBOURS);
   }
 
 	puts("Generatin graph done.");
@@ -259,12 +262,19 @@ int main(int argc, char **argv){
       minh=h;
       last=cor_color[i].second;
     }
-    auto avg=out->get(0,h)*blanks[h]+cor_color[i].second;
+    auto avg=out->get(0,h)*blanks[h]+cor_color[i].second*cor_color[i].second;
     blanks[h]++;
     avg = avg * (1.f/blanks[h]);
-		for(int j=0;j<out->w;j++)
-      out->set(j,h,avg);
+		out->set(0,h,avg);
 	}
+  for(int i=0;i<out->h;i++){
+    auto c=out->get(0,i);
+    c.r=sqrt(c.r);
+    c.g=sqrt(c.g);
+    c.b=sqrt(c.b);
+    for(int j=0;j<out->w;j++)
+      out->set(j,i,c);
+  }
   puts("Interpolating unknown corrosion appearances..");
   int last_h=0,next_h=0;
   Color next;
@@ -295,36 +305,49 @@ int main(int argc, char **argv){
         // next_w*=tot;
         if(no_next)
           last_w=1,next_w=0;
-        for(int j=0;j<out->w;j++)
+        for(int j=0;j<out->w;j++){
           // out->set(j,i,Color(0,0,0));
-          out->set(j,i,last*last_w+next*next_w);
+          auto c=last*last_w+next*next_w;
+          // auto c=last*last*last_w+next*next*next_w;
+          // c.r=sqrt(c.r);
+          // c.g=sqrt(c.g);
+          // c.b=sqrt(c.b);
+          out->set(j,i,c);
           // out->set(j,i,Color(1,1,1)*last_w);
+        }
       }
       i--;
     }
   }
-
-  out->save(name+"-color.bmp");
+  string basename=name.substr(0,name.find_last_of("."));
+  cout<<"Base filename: "<<basename<<endl;
+  out->save(basename+"-color.bmp");
 
   Image* wmap = new Image();
 	wmap->load(name);
+  vector<Color> gradient;
+  for(int k=0;k<out->h;k++){
+    auto c=out->get(0,k);
+    // c.print();
+    gradient.push_back(c);
+  }
 	for(int i=0;i<map->w;i++){
 		for(int j=0;j<map->h;j++){
 			c = map->get(i,j);
       float min_dist=THRESHOLD2;
       Color nearest=Color(1,0,0);
-      for(int i=0;i<out->h;i++){
-        auto c1 = out->get(0,i);
+      for(int k=0;k<gradient.size();k++){
+        auto &c1 = gradient[k];
         float d=dist(c1,c);
-        if(d<min_dist){
+        if(d<=min_dist){
           min_dist=d;
-          nearest=Color(1,1,1)*(float(i)/out->h);
+          nearest=Color(1,1,1)*(float(k)/(out->h-1));
         }
       }
 			wmap->set(i,j,nearest);
 		}
 	}
-	wmap->save(name+"-base.bmp");
+	wmap->save(basename+"-base.bmp");
   cout<<"Done all";
 	if(wmap)delete wmap;
 	// Image* hist = new Image();
