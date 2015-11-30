@@ -29,9 +29,47 @@ float dist(const Color& c1,const Color& c2){
 	return sqrt((c1.x-c2.x)*(c1.x-c2.x) + (c1.y-c2.y)*(c1.y-c2.y) + (c1.z-c2.z)*(c1.z-c2.z));
 }
 
+float distSq(const Color& c1,const Color& c2){
+  return (c1.x-c2.x)*(c1.x-c2.x) + (c1.y-c2.y)*(c1.y-c2.y) + (c1.z-c2.z)*(c1.z-c2.z);
+}
+
 // float dist(const Color& c1,const Color& c2){
 //   return sqrt(pow(c1.r-c2.r,4) + pow(c1.g-c2.g,4) + pow(c1.b-c2.b,4));
 // }
+
+Color aggregateColors(vector<Color> &colors)
+{
+  float sum;
+  if(colors.size()==0)
+    return Color(0,0,0);
+  Color argMin=colors[0];
+  vector< pair<float,Color> > sums;
+  for(auto &c1:colors){
+    sum=0;
+    for(auto &c2:colors){
+      sum+=distSq(c1,c2);
+    }
+    if(sum<0.1)
+      sum=0.1;
+    sums.push_back({10000.f/sum,c1});
+  }
+  make_heap(sums.begin(),sums.end());
+  size_t maxi=sums.size()*0.1;
+  Color totC(0,0,0);
+  float totW=0;
+  if(maxi<1)
+    maxi=1;
+  for(int i=0;i<maxi;i++){
+    auto sc=sums.front();
+    totC = totC + sc.second*sc.first;
+    totW += sc.first;
+    pop_heap(sums.begin(),sums.end());
+    sums.pop_back();
+  }
+  totC.print();
+  cout<<totW<<" ";
+  return totC/totW;
+}
 
 /**
  * @brief Dijkstra shortest path
@@ -250,6 +288,7 @@ int main(int argc, char **argv){
 
 	out->init(100,1000);
   vector<int> blanks(out->h,0);
+  vector< vector<Color> > grad_colors(out->h);
   int minh=out->h;
   Color last;
 	for(int i=0;i<N;i++){
@@ -262,16 +301,13 @@ int main(int argc, char **argv){
       minh=h;
       last=cor_color[i].second;
     }
-    auto avg=out->get(0,h)*blanks[h]+cor_color[i].second*cor_color[i].second;
+    grad_colors[h].push_back(cor_color[i].second);
     blanks[h]++;
-    avg = avg * (1.f/blanks[h]);
-		out->set(0,h,avg);
 	}
+  puts("Aggregating colors...");
   for(int i=0;i<out->h;i++){
-    auto c=out->get(0,i);
-    c.r=sqrt(c.r);
-    c.g=sqrt(c.g);
-    c.b=sqrt(c.b);
+    auto c=aggregateColors(grad_colors[i]);
+    printf(".");
     for(int j=0;j<out->w;j++)
       out->set(j,i,c);
   }
