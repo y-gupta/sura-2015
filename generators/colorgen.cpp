@@ -66,8 +66,8 @@ Color aggregateColors(vector<Color> &colors)
     pop_heap(sums.begin(),sums.end());
     sums.pop_back();
   }
-  totC.print();
-  cout<<totW<<" ";
+  // totC.print();
+  // cout<<totW<<" ";
   return totC/totW;
 }
 
@@ -306,7 +306,11 @@ int main(int argc, char **argv){
 	}
   puts("Aggregating colors...");
   for(int i=0;i<out->h;i++){
-    auto c=aggregateColors(grad_colors[i]);
+    Color c(0,0,0);
+    // if(grad_colors[i].size()>2)
+    // {
+    c=aggregateColors(grad_colors[i]);
+    // }
     printf(".");
     for(int j=0;j<out->w;j++)
       out->set(j,i,c);
